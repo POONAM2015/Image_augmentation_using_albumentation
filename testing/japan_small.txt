@@ -1,0 +1,9 @@
+D:\Documents\MyDocument\Road Rutting Dataset_\Image_augmentation_using_albumentation\testing\images\Japan_000373.jpg
+D:\Documents\MyDocument\Road Rutting Dataset_\Image_augmentation_using_albumentation\testing\images\Japan_000382.jpg
+D:\Documents\MyDocument\Road Rutting Dataset_\Image_augmentation_using_albumentation\testing\images\Japan_000390.jpg
+D:\Documents\MyDocument\Road Rutting Dataset_\Image_augmentation_using_albumentation\testing\images\Japan_000392.jpg
+D:\Documents\MyDocument\Road Rutting Dataset_\Image_augmentation_using_albumentation\testing\images\Japan_000408.jpg
+D:\Documents\MyDocument\Road Rutting Dataset_\Image_augmentation_using_albumentation\testing\images\Japan_000167.jpg
+D:\Documents\MyDocument\Road Rutting Dataset_\Image_augmentation_using_albumentation\testing\images\Japan_000222.jpg
+D:\Documents\MyDocument\Road Rutting Dataset_\Image_augmentation_using_albumentation\testing\images\Japan_000016.jpg
+D:\Documents\MyDocument\Road Rutting Dataset_\Image_augmentation_using_albumentation\testing\images\Japan_000039.jpg
