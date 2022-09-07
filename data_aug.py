@@ -3,10 +3,10 @@ import albumentations as A
 import argparse, random
 import os, shutil, cv2, glob
 import time
-import matplotlib.pyplot as plt
 from typing import List
 from multiprocessing.pool import Pool
 from collections import defaultdict
+import matplotlib.pyplot as plt
 
 def clamp(x):
     return min(max(0.0, x), 1.0)
@@ -146,18 +146,20 @@ def single_image_augmentation(arg):
     # print(*aug_pipeline, sep='\n')
     for a in aug_pipeline:
         aug_dist[a] += 1
+    try:
+        transform = A.Compose(aug_pipeline, bbox_params=A.BboxParams(format='yolo', min_area=10, min_visibility=0.10))
+        transformed = transform(image=image, bboxes=bboxes)
+        transformed_image = transformed['image']
+        transformed_bboxes = transformed['bboxes']
 
-    transform = A.Compose(aug_pipeline, bbox_params=A.BboxParams(format='yolo', min_area=10, min_visibility=0.10))
-    transformed = transform(image=image, bboxes=bboxes)
-    transformed_image = transformed['image']
-    transformed_bboxes = transformed['bboxes']
-
-    # print(f'NAME - {image_name}/{i}, IMAGE- {image.shape}, BBOXES = {bboxes}\nTRANSFORMED IMAGE- {transformed_image.shape}, T_BBOXES = {transformed_bboxes}\n')
-    write_augmented_images_bboxes(i, image_name, image_ext, transformed_image, transformed_bboxes, parent_folder, IMGS, LABELS, AUGMENTED_DATASET)
-    
-    if show_flag:
-        show(image, bboxes, transformed_image, transformed_bboxes)
-    return aug_dist
+        # print(f'NAME - {image_name}/{i}, IMAGE- {image.shape}, BBOXES = {bboxes}\nTRANSFORMED IMAGE- {transformed_image.shape}, T_BBOXES = {transformed_bboxes}\n')
+        write_augmented_images_bboxes(i, image_name, image_ext, transformed_image, transformed_bboxes, parent_folder, IMGS, LABELS, AUGMENTED_DATASET)
+        
+        if show_flag:
+            show(image, bboxes, transformed_image, transformed_bboxes)
+        return aug_dist
+    except Exception:
+        print('Can not augment this.')
 
 # %%
 def data_augmentation(k, img_source, show_flag, seq_flag):
@@ -173,8 +175,10 @@ def data_augmentation(k, img_source, show_flag, seq_flag):
         imagepaths = glob.glob(os.path.join(img_source, '*.*g*'))
         parent_folder = img_source[:-7]
     
+    parent_folder = os.path.normpath(parent_folder)
     print(f'Parent folder: {parent_folder}')
     print(f'len of images: {len(imagepaths)}')
+    # print(*imagepaths, sep='\n')
 
     IMGS = 'images'
     LABELS = 'labels'
@@ -182,6 +186,7 @@ def data_augmentation(k, img_source, show_flag, seq_flag):
 
     # make augmented folder
     aug_folder = os.path.join(parent_folder, AUGMENTED_DATASET)
+    aug_folder = os.path.normpath(aug_folder)
     if os.path.exists(aug_folder):
         shutil.rmtree(aug_folder)
     print(f'Augmented folder: {aug_folder}')
@@ -192,12 +197,17 @@ def data_augmentation(k, img_source, show_flag, seq_flag):
     
     arg_list = []
     for image_path in imagepaths:
+        # print(image_path)
         image_basename = os.path.basename(image_path)
         basename, image_ext = image_basename.split('.')
         label_basename = basename + '.txt'
-        label_path = os.path.join(parent_folder, LABELS, label_basename)
+        img_parent_folder = '/'.join(image_path.split('/')[:-2])
+        label_path = os.path.join(img_parent_folder, LABELS, label_basename)
+        # print(label_path)
+        # print('------------')
 
         if not os.path.exists(label_path):
+            print('labelpath no there')
             continue
         
         for i in range(k):
@@ -205,33 +215,24 @@ def data_augmentation(k, img_source, show_flag, seq_flag):
             arg_list.append(arg)
 
     print(f'No of original images = {len(imagepaths)}\nNo of augmented images to be made = {len(arg_list)}')
-    total_aug_dist = defaultdict(int)
     
     if seq_flag:
         print(f'Doing sequentially.')
-        # list(map(single_image_augmentation, arg_list))
-        for arg in arg_list:
-           d = single_image_augmentation(arg)
-           for k, v in d.items():
-            total_aug_dist[k] += v
+        list(map(single_image_augmentation, arg_list))
     else:
         print(f'Using multithreading.')
         with Pool() as pool:
             print(f'Pool loop {pool}')
             start_time_ = time.perf_counter()
             list(pool.imap_unordered(single_image_augmentation, arg_list))
-            # for res in results:
-            #     for k, v in res.items():
-            #         total_aug_dist[k] += v
             print(f'It took {time.perf_counter() - start_time_:.2} after making the pool')
     # except Exception:
     #     print(f"ERROR found in augmenting -- {image_basename}")
-    return total_aug_dist.values()
 
 # %%
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--image_source', type=str, help='folder/*.txt containing images list')
+    parser.add_argument('--image_source', type=str, default='rdd22/Dataset/Augmented_dataset/JP_US_D20_D40.txt',help='folder/*.txt containing images list')
     parser.add_argument('--label_source', type=str, default='', help='None if images, labels are in the same folder, folder/*.txt containing images list')
     parser.add_argument('--n_aug', type=int, default=2, help='max number of augmented images to obtain from an image')
     opt = parser.parse_args()
@@ -240,7 +241,6 @@ if __name__ == '__main__':
     seq_flag = False # to perform sequentially or using multithreading
 
     start_time = time.perf_counter()
-    total_aug_dist = data_augmentation(opt.n_aug, opt.image_source, show_flag, seq_flag)
+    data_augmentation(opt.n_aug, opt.image_source, show_flag, seq_flag)
     end_time = time.perf_counter()
-    print(total_aug_dist)
     print(f'Finished augmentation in {round(end_time - start_time, 2)} sec.')
