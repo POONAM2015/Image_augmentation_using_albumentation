@@ -100,7 +100,7 @@ aug_super_list = [
     A.augmentations.transforms.Emboss (alpha=(0.2, 0.5), strength=(0.2, 0.7), always_apply=False, p=0.3), # yes
     A.augmentations.transforms.Equalize (mode='cv', by_channels=True, mask=None, mask_params=(), always_apply=False, p=0.3), # yes
     A.augmentations.transforms.FancyPCA (alpha=0.1, always_apply=False, p=0.3), # yes
-    # A.augmentations.transforms.GaussianBlur (blur_limit=(3, 5), sigma_limit=0, always_apply=False, p=0.3), # yes
+    A.augmentations.transforms.GaussianBlur (blur_limit=(3, 5), sigma_limit=0, always_apply=False, p=0.3), # yes
     A.augmentations.transforms.GaussNoise (var_limit=(10.0, 50.0), mean=0, per_channel=True, always_apply=False, p=0.3), #yes
     # A.augmentations.transforms.GlassBlur (sigma=0.7, max_delta=4, iterations=2, always_apply=False, mode='fast', p=0.5), #no
     A.augmentations.transforms.HueSaturationValue (hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20, always_apply=False, p=0.2), #yes
@@ -140,7 +140,7 @@ def single_image_augmentation(arg):
    
     # defining an augmentation pipeline
     aug_dist = defaultdict(int)
-    n = 3
+    n = 4
     aug_pipeline = random.sample(aug_super_list, n)
     # print('-------------------------------------')
     # print(*aug_pipeline, sep='\n')
@@ -168,7 +168,7 @@ def data_augmentation(k, img_source, show_flag, seq_flag):
         suf = os.path.basename(img_source[:-4])
         with open(img_source, 'r') as f:
             imagepaths = f.readlines()
-        imagepaths = [imagepath[:-1] for imagepath in imagepaths]
+        imagepaths = [imagepath.rstrip() for imagepath in imagepaths]
         parent_folder = os.path.join(img_source, '..')
     else:
         suf = ''
@@ -201,13 +201,13 @@ def data_augmentation(k, img_source, show_flag, seq_flag):
         image_basename = os.path.basename(image_path)
         basename, image_ext = image_basename.split('.')
         label_basename = basename + '.txt'
-        img_parent_folder = '/'.join(image_path.split('/')[:-2])
+        img_parent_folder = os.path.sep.join(image_path.split(os.path.sep)[:-2])
         label_path = os.path.join(img_parent_folder, LABELS, label_basename)
-        # print(label_path)
-        # print('------------')
+        print(label_path)
+        print('------------')
 
         if not os.path.exists(label_path):
-            print('labelpath no there')
+            print('labelpath not there')
             continue
         
         for i in range(k):
@@ -232,7 +232,7 @@ def data_augmentation(k, img_source, show_flag, seq_flag):
 # %%
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--image_source', type=str, default='rdd22/Dataset/Augmented_dataset/JP_US_D20_D40.txt',help='folder/*.txt containing images list')
+    parser.add_argument('--image_source', type=str, default='',help='folder/*.txt containing images list')
     parser.add_argument('--label_source', type=str, default='', help='None if images, labels are in the same folder, folder/*.txt containing images list')
     parser.add_argument('--n_aug', type=int, default=2, help='max number of augmented images to obtain from an image')
     opt = parser.parse_args()
